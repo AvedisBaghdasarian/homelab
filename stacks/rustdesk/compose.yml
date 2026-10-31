@@ -4,8 +4,6 @@ services:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-hbbs
     command: hbbs -r ${RUSTDESK_RELAY_HOST:?Set RUSTDESK_RELAY_HOST}:21117
-    environment:
-      - ENCRYPTED_ONLY=1
     volumes:
       - ./data:/root
     network_mode: host
