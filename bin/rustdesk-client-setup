@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Point the local RustDesk client at our server and set its permanent password,
+# using stacks/rustdesk/.env (run bin/init-env rustdesk first).
+set -euo pipefail
+. "$(cd "$(dirname "$0")/.." && pwd)/stacks/rustdesk/.env"
+for who in "sudo" ""; do   # root (service) and current user (GUI) keep separate configs
+  $who rustdesk --option custom-rendezvous-server "$RUSTDESK_RELAY_HOST"
+  $who rustdesk --option relay-server "$RUSTDESK_RELAY_HOST"
+done
+sudo rustdesk --password "$RUSTDESK_PASSWORD"
+sudo systemctl restart rustdesk

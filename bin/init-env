@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Usage: bin/init-env <stack>
 # Creates stacks/<stack>/.env from .env.example if missing, generating a random
-# value for any blank variable whose name contains SECRET or KEY.
+# value for any blank variable whose name contains SECRET, KEY or PASSWORD.
 set -euo pipefail
 dir="$(cd "$(dirname "$0")/.." && pwd)/stacks/${1:?usage: init-env <stack>}"
 [ -f "$dir/.env" ] && { echo "$dir/.env exists, leaving it alone"; exit 0; }
 while IFS= read -r line; do
-  if [[ $line =~ ^([A-Z0-9_]*(SECRET|KEY)[A-Z0-9_]*)=$ ]]; then
+  if [[ $line =~ ^([A-Z0-9_]*(SECRET|KEY|PASSWORD)[A-Z0-9_]*)=$ ]]; then
     echo "${BASH_REMATCH[1]}=$(openssl rand -hex 32)"
   else
     echo "$line"
