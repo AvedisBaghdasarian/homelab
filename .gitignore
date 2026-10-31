@@ -1,0 +1,6 @@
+# real env files and runtime data never get committed; *.example templates do
+.env
+.env.*
+!.env.example
+data/
+logs/
