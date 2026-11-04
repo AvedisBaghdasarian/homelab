@@ -4,6 +4,8 @@ services:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-hbbs
     command: hbbs -r ${RUSTDESK_RELAY_HOST:?Set RUSTDESK_RELAY_HOST}:21117
+    environment:
+      - KEY=  # empty disables key enforcement (default '-' enforces the generated key)
     volumes:
       - ./data:/root
     network_mode: host
@@ -14,6 +16,8 @@ services:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-hbbr
     command: hbbr
+    environment:
+      - KEY=  # empty disables key enforcement (default '-' enforces the generated key)
     volumes:
       - ./data:/root
     network_mode: host
