@@ -1,0 +1,13 @@
+#cloud-config
+users:
+  - name: ubuntu
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys: ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMVBtsGfx0ISn4hgJlHwUCK1ppwnMbnBkUdqRT4j9LdM root@DESKTOP-9PQQ6TC"]
+package_update: true
+packages: [qemu-guest-agent, ubuntu-desktop-minimal]
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - systemctl set-default graphical.target
+  - reboot

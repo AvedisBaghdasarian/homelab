@@ -1,0 +1,29 @@
+- name: Read existing storages
+  ansible.builtin.command: pvesh get /storage --output-format json
+  register: storages_raw
+  changed_when: false
+  check_mode: false
+
+- name: Index storages
+  ansible.builtin.set_fact:
+    storage_ids: "{{ storages_raw.stdout | from_json | map(attribute='storage') | list }}"
+
+# One cluster-wide entry; each node uses its own HDD at the same path.
+- name: HDD directory storage
+  ansible.builtin.command: >
+    pvesm add dir hdd --path /mnt/pve/hdd --is_mountpoint 1 --shared 0
+    --nodes {{ groups['proxmox'] | join(',') }}
+    --content backup,import,rootdir,iso,images,snippets,vztmpl
+  when: "'hdd' not in storage_ids"
+
+# backup-on-<peer>: the peer's NFS export, used only by this node. Run on the using node
+# so Proxmox can verify the mount.
+- name: Cross-node backup storages
+  ansible.builtin.command: >
+    pvesm add nfs backup-on-{{ hostvars[item].backup_peer }}
+    --server {{ hostvars[hostvars[item].backup_peer].ansible_host }}
+    --export /mnt/pve/hdd/xbackup --content backup --nodes {{ item }}
+    --options vers=4.2,soft --prune-backups keep-daily=7,keep-weekly=4
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['proxmox'] }}"
+  when: "('backup-on-' ~ hostvars[item].backup_peer) not in storage_ids"

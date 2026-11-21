@@ -1,0 +1,40 @@
+# Warnings and errors -> Discord embed. Token comes from secrets.yml (gitignored).
+- name: Read webhook endpoints
+  ansible.builtin.command: pvesh get /cluster/notifications/endpoints/webhook --output-format json
+  register: webhooks_raw
+  changed_when: false
+  check_mode: false
+
+- name: Read matchers
+  ansible.builtin.command: pvesh get /cluster/notifications/matchers --output-format json
+  register: matchers_raw
+  changed_when: false
+  check_mode: false
+
+- name: Facts
+  ansible.builtin.set_fact:
+    discord_body_b64: "{{ lookup('file', 'discord-webhook-body.json') | trim | b64encode }}"
+    discord_existing: "{{ webhooks_raw.stdout | from_json | selectattr('name', 'equalto', 'discord') | list }}"
+    matcher_names: "{{ matchers_raw.stdout | from_json | map(attribute='name') | list }}"
+
+- name: Create Discord webhook target
+  ansible.builtin.command: >
+    pvesh create /cluster/notifications/endpoints/webhook --name discord --method post
+    --url 'https://discord.com/api/webhooks/{{ "{{" }} secrets.token {{ "}}" }}'
+    --header 'name=Content-Type,value={{ "application/json" | b64encode }}'
+    --body '{{ discord_body_b64 }}'
+    --secret 'name=token,value={{ discord_webhook_token | b64encode }}'
+    --comment 'Discord alerts'
+  no_log: true
+  when: discord_existing | length == 0
+
+- name: Keep the message template in sync
+  ansible.builtin.command: >
+    pvesh set /cluster/notifications/endpoints/webhook/discord --body '{{ discord_body_b64 }}'
+  when: discord_existing | length > 0 and discord_existing[0].body != discord_body_b64
+
+- name: Route warnings and errors to Discord
+  ansible.builtin.command: >
+    pvesh create /cluster/notifications/matchers --name discord-failures --target discord
+    --match-severity error,warning --mode all --comment 'Warnings and errors to Discord'
+  when: "'discord-failures' not in matcher_names"

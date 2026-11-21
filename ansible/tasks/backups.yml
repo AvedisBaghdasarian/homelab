@@ -1,0 +1,21 @@
+- name: Read existing backup jobs
+  ansible.builtin.command: pvesh get /cluster/backup --output-format json
+  register: jobs_raw
+  changed_when: false
+  check_mode: false
+
+# Every VM on a node is backed up nightly to its peer's HDD. A job counts as present if one
+# already targets that node + storage (so jobs created by hand aren't duplicated).
+- name: Nightly cross-node backup job
+  ansible.builtin.command: >
+    pvesh create /cluster/backup --id backup-{{ item }}
+    --schedule "{{ hostvars[item].backup_time }}" --all 1 --node {{ item }}
+    --storage backup-on-{{ hostvars[item].backup_peer }}
+    --mode snapshot --compress zstd --enabled 1 --notes-template "{{ '{{' }}guestname{{ '}}' }}"
+    --comment "{{ item }} VMs -> {{ hostvars[item].backup_peer }} HDD (cross-node)"
+  loop: "{{ groups['proxmox'] }}"
+  when: >-
+    jobs_raw.stdout | from_json
+    | selectattr('node', 'defined') | selectattr('node', 'equalto', item)
+    | selectattr('storage', 'equalto', 'backup-on-' ~ hostvars[item].backup_peer)
+    | list | length == 0

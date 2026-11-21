@@ -1,0 +1,2 @@
+{"username": "Proxmox", "embeds": [{"title": "{{ escape title }}", "description": "**Severity:** {{ severity }}\n**Node:** {{ fields.hostname }}", "color": {{#if (eq severity "error")}}15548997{{else}}{{#if (eq severity "warning")}}16705372{{else}}5793266{{/if}}{{/if}}, "footer": {"text": "Proxmox VE"}}]}
+

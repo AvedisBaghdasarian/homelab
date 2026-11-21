@@ -1,0 +1,23 @@
+all:
+  vars:
+    ansible_user: root
+    cluster_name: avedlab
+    cluster_primary: "{{ groups['primary'][0] }}"
+    workstation_pubkey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMVBtsGfx0ISn4hgJlHwUCK1ppwnMbnBkUdqRT4j9LdM root@DESKTOP-9PQQ6TC"
+  children:
+    proxmox:
+      hosts:
+        pve1:
+          ansible_host: 192.168.50.200
+          backup_peer: pve2          # this node's VMs are backed up to the peer's HDD
+          backup_time: "02:30"
+          hdd_uuid: 843baf82-87f8-48e2-8da9-fa26f33af8b1
+          thinpool_size_g: 66.14     # grown from the installer's 54 GB
+        pve2:
+          ansible_host: 192.168.50.201
+          backup_peer: pve1
+          backup_time: "03:30"
+          hdd_uuid: 5d48944b-9bbb-4c96-9da1-248eb019648f
+    primary:                       # creates the cluster; cluster-wide config runs here
+      hosts:
+        pve1:

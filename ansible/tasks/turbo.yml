@@ -1,0 +1,26 @@
+# OptiPlex 3050 firmware boots with turbo disabled (MSR 0x1A0 bit 38); clear it every boot.
+- name: Load msr module at boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/msr.conf
+    content: "msr\n"
+    mode: "0644"
+
+- name: Install turbo script
+  ansible.builtin.copy:
+    src: enable-turbo.sh
+    dest: /usr/local/bin/enable-turbo.sh
+    mode: "0755"
+
+- name: Install turbo service
+  ansible.builtin.copy:
+    src: enable-turbo.service
+    dest: /etc/systemd/system/enable-turbo.service
+    mode: "0644"
+  register: turbo_unit
+
+- name: Enable turbo service
+  ansible.builtin.systemd_service:
+    name: enable-turbo.service
+    enabled: true
+    state: started
+    daemon_reload: "{{ turbo_unit.changed }}"

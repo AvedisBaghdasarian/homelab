@@ -1,0 +1,12 @@
+[Install]
+WantedBy=multi-user.target
+
+[Mount]
+Options=defaults
+Type=ext4
+What=/dev/disk/by-uuid/{{ hdd_uuid }}
+Where=/mnt/pve/hdd
+
+[Unit]
+Description=Mount storage 'hdd' under /mnt/pve
+

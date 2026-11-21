@@ -1,0 +1,32 @@
+- name: Check cluster membership
+  ansible.builtin.command: pvecm status
+  register: pvecm
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Create cluster
+  ansible.builtin.command: pvecm create {{ cluster_name }}
+  when: inventory_hostname == cluster_primary and pvecm.rc != 0
+
+- name: Join cluster
+  when: inventory_hostname != cluster_primary and pvecm.rc != 0
+  block:
+    - name: Read this node's root key
+      ansible.builtin.slurp:
+        src: /root/.ssh/id_rsa.pub
+      register: node_key
+
+    - name: Let this node SSH to the primary (pvecm add --use_ssh)
+      ansible.builtin.shell: |
+        grep -qxF '{{ node_key.content | b64decode | trim }}' /etc/pve/priv/authorized_keys ||
+          echo '{{ node_key.content | b64decode | trim }}' >> /etc/pve/priv/authorized_keys
+      delegate_to: "{{ cluster_primary }}"
+
+    - name: Trust the primary's host key
+      ansible.builtin.shell: >
+        ssh-keygen -F {{ hostvars[cluster_primary].ansible_host }} >/dev/null ||
+        ssh-keyscan -t ed25519,rsa {{ hostvars[cluster_primary].ansible_host }} >> /root/.ssh/known_hosts
+
+    - name: Join
+      ansible.builtin.command: pvecm add {{ hostvars[cluster_primary].ansible_host }} --use_ssh 1

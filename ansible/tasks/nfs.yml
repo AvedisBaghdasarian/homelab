@@ -1,0 +1,31 @@
+# Each node exports /mnt/pve/hdd/xbackup to its backup peer only.
+- name: Backup export directory
+  ansible.builtin.file:
+    path: /mnt/pve/hdd/xbackup
+    state: directory
+    mode: "0755"
+
+- name: Export to the peer
+  ansible.builtin.lineinfile:
+    path: /etc/exports
+    regexp: '^/mnt/pve/hdd/xbackup\s'
+    line: "/mnt/pve/hdd/xbackup  {{ hostvars[backup_peer].ansible_host }}(rw,sync,no_subtree_check,no_root_squash)"
+  register: exports
+
+- name: Never serve NFS unless the HDD is mounted (else backups would fill the root disk)
+  ansible.builtin.copy:
+    src: nfs-server-require-hdd.conf
+    dest: /etc/systemd/system/nfs-server.service.d/require-hdd.conf
+    mode: "0644"
+  register: nfs_dropin
+
+- name: Ensure nfs-server is running
+  ansible.builtin.systemd_service:
+    name: nfs-server
+    enabled: true
+    state: started
+    daemon_reload: "{{ nfs_dropin.changed }}"
+
+- name: Reload exports
+  ansible.builtin.command: exportfs -ra
+  when: exports.changed

@@ -1,0 +1,32 @@
+# Configures both Proxmox nodes after a stock install. Safe to re-run.
+#   ansible-playbook site.yml              # apply
+#   ansible-playbook site.yml --check --diff   # dry run
+
+- name: Node-local configuration
+  hosts: proxmox
+  tasks:
+    - import_tasks: tasks/base.yml
+    - import_tasks: tasks/turbo.yml
+    - import_tasks: tasks/disks.yml
+    - import_tasks: tasks/nfs.yml
+
+- name: Cluster
+  hosts: proxmox
+  serial: 1                       # primary first, then joiners
+  order: sorted
+  tasks:
+    - import_tasks: tasks/cluster.yml
+
+- name: Cluster-wide configuration (/etc/pve)
+  hosts: primary
+  vars_files:
+    - secrets.yml
+  tasks:
+    - import_tasks: tasks/storage.yml
+    - import_tasks: tasks/backups.yml
+    - import_tasks: tasks/notifications.yml
+
+- name: Cloud-init snippets
+  hosts: proxmox
+  tasks:
+    - import_tasks: tasks/snippets.yml

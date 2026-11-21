@@ -1,0 +1,32 @@
+# HDD: existing ext4 filesystem identified by UUID (inventory: hdd_uuid). Never formatted here,
+# so backups on it survive a reinstall. New disk: see ansible/README.md.
+- name: Check the HDD filesystem exists
+  ansible.builtin.stat:
+    path: "/dev/disk/by-uuid/{{ hdd_uuid }}"
+  register: hdd_dev
+  failed_when: not hdd_dev.stat.exists
+
+- name: HDD mount unit
+  ansible.builtin.template:
+    src: mnt-pve-hdd.mount.j2
+    dest: /etc/systemd/system/mnt-pve-hdd.mount
+    mode: "0644"
+  register: hdd_unit
+
+- name: Mount HDD
+  ansible.builtin.systemd_service:
+    name: mnt-pve-hdd.mount
+    enabled: true
+    state: started
+    daemon_reload: "{{ hdd_unit.changed }}"
+
+- name: Read thin pool size
+  ansible.builtin.command: lvs --noheadings --units g --nosuffix -o lv_size pve/data
+  register: thinpool
+  changed_when: false
+  check_mode: false
+  when: thinpool_size_g is defined
+
+- name: Grow thin pool
+  ansible.builtin.command: lvextend -L {{ thinpool_size_g }}g pve/data
+  when: thinpool_size_g is defined and (thinpool.stdout | trim | float) < (thinpool_size_g | float) - 0.01

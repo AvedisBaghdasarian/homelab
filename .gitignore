@@ -4,3 +4,5 @@
 !.env.example
 data/
 logs/
+# ansible secrets (copy ansible/secrets.example.yml)
+ansible/secrets.yml

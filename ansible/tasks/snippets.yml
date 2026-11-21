@@ -1,0 +1,8 @@
+# VMs 101/102 reference hdd:snippets/*.yaml and won't start without them. `hdd` is per-node,
+# so every node gets a copy: a VM can then be restored onto either node.
+- name: Cloud-init snippets
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /mnt/pve/hdd/snippets/
+    mode: "0644"
+  with_fileglob: files/snippets/*.yaml

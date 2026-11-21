@@ -1,0 +1,12 @@
+# Replaces the certificatesResolvers block in /etc/dokploy/traefik/traefik.yml.
+# Requires CF_DNS_API_TOKEN in Traefik's environment (Settings → Web Server → Traefik → Modify Environment).
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: <your-letsencrypt-email>
+      storage: /etc/dokploy/traefik/dynamic/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"

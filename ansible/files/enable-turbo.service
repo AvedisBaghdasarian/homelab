@@ -1,0 +1,12 @@
+[Unit]
+Description=Re-enable CPU turbo disabled by firmware
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/sbin/modprobe msr
+ExecStart=/usr/local/bin/enable-turbo.sh
+
+[Install]
+WantedBy=multi-user.target
