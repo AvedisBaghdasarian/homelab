@@ -11,9 +11,8 @@
    dedup, no verify jobs, and no file-level restore.
 
 ## Proxmox
-5. **Pending updates.** The update source is enabled now, but nothing has been installed:
-   130 packages on pve1 and 222 on pve2, 41 of them Proxmox. Upgrade one node at a time
-   with `apt full-upgrade`, and reboot if the kernel changes.
+5. **VMs don't start automatically when a host boots** (`onboot` isn't set). After a
+   reboot, start them by hand: `qm start <id>`.
 6. **pve1 has more VM memory assigned than it has RAM.** 9 GB is assigned on an 8 GB host,
    so VM 101 runs ballooned to about 2.8 GB and the host swaps.
 7. **pve1's thin pool is overcommitted** (72 GiB of virtual disks in 66 GiB, about 25% used),
